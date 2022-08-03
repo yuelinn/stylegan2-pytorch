@@ -4,6 +4,7 @@ import torch
 from torch.nn import functional as F
 import numpy as np
 from tqdm import tqdm
+import pdb
 
 import lpips
 from model import Generator
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     ckpt = torch.load(args.ckpt)
 
     g = Generator(args.size, latent_dim, 8).to(device)
-    g.load_state_dict(ckpt["g_ema"])
+    g.load_state_dict(ckpt["g_ema"], strict=False)
     g.eval()
 
     percept = lpips.PerceptualLoss(
@@ -82,7 +83,10 @@ if __name__ == "__main__":
 
     n_batch = args.n_sample // args.batch
     resid = args.n_sample - (n_batch * args.batch)
-    batch_sizes = [args.batch] * n_batch + [resid]
+    if resid > 0:
+        batch_sizes = [args.batch] * n_batch + [resid]
+    else:
+        batch_sizes = [args.batch] * n_batch
 
     with torch.no_grad():
         for batch in tqdm(batch_sizes):
@@ -117,7 +121,11 @@ if __name__ == "__main__":
             dist = percept(image[::2], image[1::2]).view(image.shape[0] // 2) / (
                 args.eps ** 2
             )
+
+
             distances.append(dist.to("cpu").numpy())
+
+
 
     distances = np.concatenate(distances, 0)
 
