@@ -17,7 +17,10 @@ def extract_feature_from_samples(
 ):
     n_batch = n_sample // batch_size
     resid = n_sample - (n_batch * batch_size)
-    batch_sizes = [batch_size] * n_batch + [resid]
+    if resid > 0: 
+        batch_sizes = [batch_size] * n_batch + [resid]
+    else:
+        batch_sizes = [batch_size] * n_batch
     features = []
 
     for batch in tqdm(batch_sizes):
