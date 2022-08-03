@@ -19,7 +19,7 @@ def generate(args, g_ema, device, mean_latent):
 
             utils.save_image(
                 sample,
-                f"sample/{str(i).zfill(6)}.png",
+                f"{args.out_path}/{str(i).zfill(6)}.png",
                 nrow=1,
                 normalize=True,
                 range=(-1, 1),
@@ -50,6 +50,12 @@ if __name__ == "__main__":
         default=4096,
         help="number of vectors to calculate mean for the truncation",
     )
+    parser.add_argument(
+        "--out_path",
+        type=str,
+        default="generator",
+        help="path of output dir",
+    )   
     parser.add_argument(
         "--ckpt",
         type=str,
