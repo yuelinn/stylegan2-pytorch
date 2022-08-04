@@ -76,6 +76,7 @@ if __name__ == "__main__":
     # dir_arr = [0.0, -5.0 -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
     print(dir_arr)
     img_arr=[]
+    pdb.set_trace()
 
     for degree in dir_arr:
         direction = degree * eigvec[:, args.index].unsqueeze(0)
