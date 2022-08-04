@@ -4,26 +4,35 @@ import torch
 from torchvision import utils
 from model import Generator
 from tqdm import tqdm
+import numpy as np
+from scipy.interpolate import interp1d
+import ipdb
 
 
-def generate(args, g_ema, device, mean_latent):
+def generate(args, g_ema, device, mean_latent, i):
 
     with torch.no_grad():
         g_ema.eval()
-        for i in tqdm(range(args.pics)):
-            sample_z = torch.randn(args.sample, args.latent, device=device)
 
-            sample, _ = g_ema(
-                [sample_z], truncation=args.truncation, truncation_latent=mean_latent
-            )
+        # Linn: create more z's by interpolation
+        interp_n_steps=10  # TODO make an args
+        sample_z_pts = np.random.normal(0., 1., (2, args.pics, args.latent))
+        sample_z_np = interp1d([0,interp_n_steps-1], sample_z_pts, axis=0)(range(interp_n_steps))
+        sample_z_np=sample_z_np.reshape(-1, sample_z_np.shape[-1])
 
-            utils.save_image(
-                sample,
-                f"{args.out_path}/{str(i).zfill(6)}.png",
-                nrow=1,
-                normalize=True,
-                range=(-1, 1),
-            )
+        sample_z = torch.from_numpy(sample_z_np).float().to(device)
+
+        sample, _ = g_ema(
+            [sample_z], truncation=args.truncation, truncation_latent=mean_latent
+        ) # TODO itemize so that batch size is okay
+
+        utils.save_image(
+            sample,
+            f"{args.out_path}/grid_{i}.png",
+            nrow=args.pics,
+            normalize=True,
+            range=(-1, 1),
+        )
 
 
 if __name__ == "__main__":
@@ -34,12 +43,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--size", type=int, default=1024, help="output image size of the generator"
     )
+    """
     parser.add_argument(
         "--sample",
         type=int,
         default=1,
         help="number of samples to be generated for each image",
     )
+    """
     parser.add_argument(
         "--pics", type=int, default=20, help="number of images to be generated"
     )
@@ -87,4 +98,5 @@ if __name__ == "__main__":
     else:
         mean_latent = None
 
-    generate(args, g_ema, device, mean_latent)
+    for i in range(10): #TODO make an args
+        generate(args, g_ema, device, mean_latent, i)
