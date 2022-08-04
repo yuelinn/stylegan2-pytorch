@@ -4,6 +4,8 @@ import torch
 from torchvision import utils
 
 from model import Generator
+import numpy as np
+import pdb
 
 
 if __name__ == "__main__":
@@ -64,29 +66,30 @@ if __name__ == "__main__":
     latent = torch.randn(args.n_sample, 512, device=args.device)
     latent = g.get_latent(latent)
 
-    direction = args.degree * eigvec[:, args.index].unsqueeze(0)
+    # direction = args.degree * eigvec[:, args.index].unsqueeze(0)
+    
+    #dir_arr = np.arange(-2.5, 0.25, 0.25)
+    #np.set_printoptions(precision=3)
 
-    img, _ = g(
-        [latent],
-        truncation=args.truncation,
-        truncation_latent=trunc,
-        input_is_latent=True,
-    )
-    img1, _ = g(
-        [latent + direction],
-        truncation=args.truncation,
-        truncation_latent=trunc,
-        input_is_latent=True,
-    )
-    img2, _ = g(
-        [latent - direction],
-        truncation=args.truncation,
-        truncation_latent=trunc,
-        input_is_latent=True,
-    )
+    dir_arr=[0.0, -3., -2., -1., 0, 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
+    # dir_arr = [0.0, -1.0 -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0]
+    # dir_arr = [0.0, -5.0 -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+    print(dir_arr)
+    img_arr=[]
+
+    for degree in dir_arr:
+        direction = degree * eigvec[:, args.index].unsqueeze(0)
+        # pdb.set_trace()
+        img, _ = g(
+            [latent+ direction],
+            truncation=args.truncation,
+            truncation_latent=trunc,
+            input_is_latent=True,
+        )
+        img_arr.append(img)
 
     grid = utils.save_image(
-        torch.cat([img1, img, img2], 0),
+        torch.cat(img_arr, 0),
         f"{args.out_prefix}_index-{args.index}_degree-{args.degree}.png",
         normalize=True,
         range=(-1, 1),
