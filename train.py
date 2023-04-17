@@ -12,12 +12,14 @@ import torch.distributed as dist
 from torchvision import transforms, utils
 from tqdm import tqdm
 
+from random import randrange
+
 try:
     import wandb
 
 except ImportError:
     wandb = None
-
+print("wandb import done")
 
 from dataset import MultiResolutionDataset
 from distributed import (
@@ -27,9 +29,12 @@ from distributed import (
     reduce_sum,
     get_world_size,
 )
+print("dist import done")
 from op import conv2d_gradfix
+print("op import done")
 from non_leaking import augment, AdaptiveAugment
 
+print("other import done")
 
 def data_sampler(dataset, shuffle, distributed):
     if distributed:
@@ -123,8 +128,10 @@ def set_grad_none(model, targets):
             p.grad = None
 
 
-def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device):
+def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device, loader2=None):
     loader = sample_data(loader)
+    if loader2 is not None:
+        loader2 = sample_data(loader2)
 
     pbar = range(args.iter)
 
@@ -166,7 +173,14 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
 
             break
 
-        real_img = next(loader)
+        
+        r = randrange(2)
+        #if r > 0:
+        if True:
+            real_img = next(loader)
+        else:
+            real_img = next(loader2)
+        
         real_img = real_img.to(device)
 
         requires_grad(generator, False)
@@ -308,7 +322,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                     sample, _ = g_ema([sample_z])
                     utils.save_image(
                         sample,
-                        f"/cache/linn/psp_checkpts/sample/{str(i).zfill(6)}.png",
+                        f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-labelled-v2/sample/{str(i).zfill(6)}.png",
                         nrow=int(args.n_sample ** 0.5),
                         normalize=True,
                         range=(-1, 1),
@@ -325,11 +339,12 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                         "args": args,
                         "ada_aug_p": ada_aug_p,
                     },
-                    f"/cache/linn/psp_checkpts/checkpts/{str(i).zfill(6)}.pt",
+                    f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-labelled-v2/checkpts/{str(i).zfill(6)}.pt",
                 )
 
 
 if __name__ == "__main__":
+    print("i started")
     device = "cuda"
 
     parser = argparse.ArgumentParser(description="StyleGAN2 trainer")
@@ -525,7 +540,17 @@ if __name__ == "__main__":
         drop_last=True,
     )
 
+    ugv_path = "/export/data/linn/plants/bonn16ugv-balanced"
+    dataset2 = MultiResolutionDataset(ugv_path, transform, args.size)
+    loader2 = data.DataLoader(
+        dataset2,
+        batch_size=args.batch,
+        sampler=data_sampler(dataset2, shuffle=True, distributed=args.distributed),
+        drop_last=True,
+    )
+
+
     if get_rank() == 0 and wandb is not None and args.wandb:
         wandb.init(project="stylegan 2")
 
-    train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device)
+    train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device, loader2=loader2)
