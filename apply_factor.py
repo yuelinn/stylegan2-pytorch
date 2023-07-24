@@ -6,6 +6,7 @@ from torchvision import utils
 from model import Generator
 import numpy as np
 import pdb
+import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
@@ -71,22 +72,51 @@ if __name__ == "__main__":
     #dir_arr = np.arange(-2.5, 0.25, 0.25)
     #np.set_printoptions(precision=3)
 
-    dir_arr=[0.0, -3., -2., -1., 0, 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
+    dir_arr=[-3., -2., -1., 0, 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
+    # dir_arr=[0.0, -3., -2., -1., 0, 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
     # dir_arr = [0.0, -1.0 -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0]
     # dir_arr = [0.0, -5.0 -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
     print(dir_arr)
     img_arr=[]
+    num_latents_neg_arr=[]
+    sum_neg_arr=[]
+    sum_pos_arr=[]
+
 
     for degree in dir_arr:
         direction = degree * eigvec[:, args.index].unsqueeze(0)
         # pdb.set_trace()
+        new_latent = latent + direction
         img, _ = g(
-            [latent+ direction],
+            [new_latent],
             truncation=args.truncation,
             truncation_latent=trunc,
             input_is_latent=True,
         )
         img_arr.append(img)
+        print(f"dir: {degree}" )
+        num_latents_neg = torch.numel(new_latent[new_latent<0.])
+        print(f"num latents: {torch.numel(new_latent)}")
+        print(f"num latents in neg: {num_latents_neg}")
+        sum_neg = torch.sum(new_latent[new_latent<0.])
+        sum_pos = torch.sum(new_latent[new_latent>0.])
+        print(f"total of latents in neg: {sum_neg}")
+        print(f"total of latents in pos: {sum_pos}")
+
+        num_latents_neg_arr.append(num_latents_neg)
+        sum_neg_arr.append(sum_neg)
+        sum_pos_arr.append(sum_pos)
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot()
+    ax1.plot(dir_arr, num_latents_neg_arr,'ro', label='num of neg latent elements')
+    ax1.plot(dir_arr, sum_neg_arr,'bs', label='sum of neg latent elements')
+    ax1.plot(dir_arr, sum_pos_arr,'g+', label='sum of pos latent elements')
+    ax1.legend()
+    ax1.set_xlabel('degree')
+    print(args.index)
+    plt.title("EigVec Index: "+str(args.index))
+    plt.show()
 
     grid = utils.save_image(
         torch.cat(img_arr, 0),

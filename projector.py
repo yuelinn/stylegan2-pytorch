@@ -127,11 +127,11 @@ if __name__ == "__main__":
 
     n_mean_latent = 10000
 
-    resize = min(args.size, 256)
+    resize = min(args.size, 512)
 
     transform = transforms.Compose(
         [
-            transforms.Resize(resize),
+            # transforms.Resize(resize),
             transforms.CenterCrop(resize),
             transforms.ToTensor(),
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
@@ -193,8 +193,8 @@ if __name__ == "__main__":
 
         batch, channel, height, width = img_gen.shape
 
-        if height > 256:
-            factor = height // 256
+        if height > 512:
+            factor = height // 512
 
             img_gen = img_gen.reshape(
                 batch, channel, height // factor, factor, width // factor, factor

@@ -322,7 +322,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                     sample, _ = g_ema([sample_z])
                     utils.save_image(
                         sample,
-                        f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-labelled-v2/sample/{str(i).zfill(6)}.png",
+                        f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-unl-uxv/sample/{str(i).zfill(6)}.png",
                         nrow=int(args.n_sample ** 0.5),
                         normalize=True,
                         range=(-1, 1),
@@ -339,7 +339,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                         "args": args,
                         "ada_aug_p": ada_aug_p,
                     },
-                    f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-labelled-v2/checkpts/{str(i).zfill(6)}.pt",
+                    f"/export/data/linn/ckpts/sg2_ckpts/batch-mixed-unl-uxv/checkpts/{str(i).zfill(6)}.pt",
                 )
 
 
@@ -540,6 +540,7 @@ if __name__ == "__main__":
         drop_last=True,
     )
 
+    """
     ugv_path = "/export/data/linn/plants/bonn16ugv-balanced"
     dataset2 = MultiResolutionDataset(ugv_path, transform, args.size)
     loader2 = data.DataLoader(
@@ -548,9 +549,10 @@ if __name__ == "__main__":
         sampler=data_sampler(dataset2, shuffle=True, distributed=args.distributed),
         drop_last=True,
     )
+    """
 
 
     if get_rank() == 0 and wandb is not None and args.wandb:
         wandb.init(project="stylegan 2")
 
-    train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device, loader2=loader2)
+    train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device, loader2=None)

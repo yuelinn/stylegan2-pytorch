@@ -4,18 +4,24 @@ import torch
 from torchvision import utils
 from model import Generator
 from tqdm import tqdm
+import os 
 
 
 def generate(args, g_ema, device, mean_latent):
+
+    latent_dir = f"{args.out_path}/latents"
+    os.mkdir(latent_dir)
 
     with torch.no_grad():
         g_ema.eval()
         for i in tqdm(range(args.pics)):
             sample_z = torch.randn(args.sample, args.latent, device=device)
 
-            sample, _ = g_ema(
-                [sample_z], truncation=args.truncation, truncation_latent=mean_latent
+            sample, latents = g_ema(
+                [sample_z], truncation=args.truncation, truncation_latent=mean_latent, return_latents=True
             )
+
+            torch.save(latents, f"{latent_dir}/{str(i).zfill(6)}.pt")
 
             utils.save_image(
                 sample,
